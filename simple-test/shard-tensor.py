@@ -6,6 +6,7 @@ from checkpoint import Checkpointer
 from model import ModelArgs, Transformer
 from torch.distributed.fsdp import fully_shard, MixedPrecisionPolicy
 from utils import inspect_mixed_precision, inspect_model
+from torch.distributed.fsdp import fully_shard, FSDPModule
 
 
 def set_modules_to_forward_prefetch(model, num_to_forward_prefetch):
@@ -55,6 +56,16 @@ def main(args):
     for layer in model.layers:
         fully_shard(layer, **fsdp_kwargs)
     fully_shard(model, **fsdp_kwargs)
+    
+    print(isinstance(model, Transformer))
+    print(isinstance(model, FSDPModule))
+    print(type(model.tok_embeddings.weight))
+    print("model-tok.type", type(model.tok_embeddings), "has inner tensor all gather:", hasattr(model.tok_embeddings, "fsdp_pre_all_gather"))
+    print("model-tok-weight.type", type(model.tok_embeddings.weight), "model-tok-weight.shape", model.tok_embeddings.weight.shape)
+    print("model-tok-weight.to_local().type", type(model.tok_embeddings.weight.to_local()), "model-tok-weight.to_local().shape", model.tok_embeddings.weight.to_local().shape)
+    print('has inner tensor all gather:', hasattr(model.tok_embeddings.weight, "fsdp_pre_all_gather"))
+
+    # assert False, "I want to exit"
 
     inspect_model(model)
 
